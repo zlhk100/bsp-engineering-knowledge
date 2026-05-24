@@ -115,7 +115,7 @@ bbappend content — stopping the mistake before it happens.
 
 ```bash
 # 1. Clone this repository
-git clone https://github.com/<your-org>/bsp-engineering-knowledge
+git clone https://github.com/bsp-engineering-knowledge
 cd bsp-engineering-knowledge
 
 # 2. Create your project workspace
@@ -351,7 +351,7 @@ You are free to use, adapt, and redistribute this work for any purpose,
 including commercial use, as long as you give appropriate credit.
 
 **Attribution:** Lei Zhou, "BSP Engineering Knowledge Base",
-https://github.com/<your-org>/bsp-engineering-knowledge
+https://github.com/bsp-engineering-knowledge
 
 ---
 
