@@ -1,0 +1,31 @@
+# [Project Name] — Claude Code Session Instructions
+
+## Read before doing anything else — mandatory, in this order
+1. Read KNOWLEDGE_REGISTRY.md in this directory
+2. Read PROJECT_CONTEXT.md in this directory
+3. Read METHODOLOGY.md in this directory
+4. Read [DOMAIN]_ARCH.md for each active domain in this session
+   (check KNOWLEDGE_REGISTRY.md Domain Registry for the list)
+
+## Workspace layout
+  [repo-name-1]/     [description — e.g. upstream BSP layer, read-only reference]
+  [repo-name-2]/     [description — e.g. custom BSP layer, files to be modified]
+  [repo-name-3]/     [description — e.g. build config repo]
+  [local-file.yml]   [description — e.g. local kas config, gitignored]
+  [build/]           [description — DO NOT TOUCH — build output]
+  [prebuilts/]       [description — DO NOT TOUCH — vendor binaries, never commit]
+  [scripts/]         [description — ignore — prior session artifacts]
+
+## Standing constraints — project-specific
+- [Project constraint 1 — e.g. "M3 image is working — zero regression on all changes"]
+- [Project constraint 2 — e.g. "Never replace cdt.bin"]
+- [Project constraint 3 — e.g. "Never mix xbl_s.melf and xbl_config.elf across packages"]
+- Never commit any binary to any git repository
+- Never run [build system] unless explicitly instructed
+
+## Standing constraints — always apply (from METHODOLOGY.md)
+- Read upstream files before generating any replacement (domain F1 principle)
+- Apply Gap Analysis Evidence Protocol — tag all findings VERIFIED/INFERRED/ASSUMED
+- If a design decision arises not covered by the session spec, STOP and report
+- Apply domain checklist (F3) before generating any file
+- Show proposed change and wait for approval before applying — one fix at a time
