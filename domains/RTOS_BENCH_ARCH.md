@@ -6,7 +6,7 @@ https://creativecommons.org/licenses/by/4.0/
 
 # RTOS Benchmark Architecture Principles
 
-**Version:** 1.1
+**Version:** 1.4
 **Date:** May 2026
 **Authors:** Lei Zhou + Claude (Anthropic)
 **Licence:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
@@ -113,15 +113,21 @@ bound application temporal behaviour. Do not benchmark application
 throughput, data processing rate, or network bandwidth — these are
 derived from OS primitive behaviour and do not directly inform WCET.
 
-**The five Layer 1 primitives and their safety relevance:**
+**The five Layer 1 primitives and their temporal relevance:**
 
-| Metric | What it measures | Safety relevance |
+These metrics apply across the full criticality spectrum: ASIL-rated
+workloads (instrument cluster, ADAS) where ISO 26262 certification
+evidence is required, and QM workloads (IVI, infotainment) where
+worst-case tail latency determines user experience quality and
+Freedom from Interference (FFI) non-interference budgets.
+
+| Metric | What it measures | Temporal relevance |
 |---|---|---|
-| Task Switching Latency | Scheduler + context switch + thread activation | Bounds response time of any preemptable task |
-| Task Preemption Latency | High-priority task activation via semaphore/IPC | Bounds worst-case reaction time for safety tasks |
-| IRQ Handling Latency | Interrupt assert → ISR entry | Bounds sensor event response for ADAS/robotics |
-| Mutex Shuffling Latency | Lock/unlock under priority contention | Bounds priority inversion exposure |
-| Intertask Messaging Latency (IMLat) | OS message primitive end-to-end | Bounds inter-component communication in safety architecture |
+| Task Switching Latency | Scheduler + context switch + thread activation | Bounds response time of any preemptable task — ASIL and QM |
+| Task Preemption Latency | High-priority task activation via semaphore/IPC | Bounds worst-case reaction time — critical for ASIL safety tasks |
+| IRQ Handling Latency | Interrupt assert → ISR entry | Bounds sensor event response — ADAS/robotics (ASIL), touch/camera (QM) |
+| Mutex Shuffling Latency | Lock/unlock under priority contention | Bounds priority inversion exposure — ASIL and QM |
+| Intertask Messaging Latency (IMLat) | OS message primitive end-to-end | Bounds inter-component IPC cost — applies at all criticality levels |
 
 **Anti-pattern:** Benchmarking a single metric in isolation and claiming
 WCET coverage. The interference channels are different for each metric —
@@ -157,7 +163,7 @@ IMLat = T1 - T0
 **Why platform-native on microkernel RTOS:** POSIX pipe on a microkernel
 RTOS adds an unnecessary abstraction layer that inflates latency relative
 to the native IPC mechanism. The native primitive is what a
-safety-critical application on that platform uses. Benchmark what the
+latency-sensitive application on that platform uses. Benchmark what the
 application uses.
 
 **Anti-pattern:** Using a socket, UNIX domain socket, or message queue
@@ -165,7 +171,8 @@ as the IMLat primitive when a lower-overhead native primitive exists.
 The benchmark then measures socket overhead, not IPC overhead.
 
 **Verification:** Confirm the primitive under test is the one a
-safety-critical application in this vertical would actually use.
+latency-sensitive application in this vertical would actually use —
+whether ASIL-rated or QM.
 
 ---
 
@@ -185,6 +192,60 @@ conditions. Partial metric sets cannot support a safety claim.
 then starting Layer 2 design. The missing metrics may have different
 dominant interference channels that change the Layer 2 measurement
 strategy.
+
+---
+
+### A4 — IVI Workloads are QM — Framing Determines Evidence Type
+
+**Rule:** Automotive IVI functions (display/graphics, touch, audio,
+video codec, camera, connectivity) are classified Quality Management
+(QM) under ISO 26262 — not ASIL. No functional safety certification
+requirement applies to IVI. Evidence produced for IVI VirtIO evaluation
+must be framed as QoS performance assurance and FFI non-interference
+evidence, not as ISO 26262 ASIL certification artefacts.
+
+**ISO 26262 ASIL vs QM boundary (industry consensus):**
+
+| Function | Classification | Rationale |
+|---|---|---|
+| IVI — navigation, media, HMI, touch, audio | QM | No failure mode produces physical harm — Severity S0 |
+| Instrument cluster — speed, warnings | ASIL A–B | Driver information with safety consequence |
+| Rear-view / surround camera display | ASIL B | Safety-relevant perception aid |
+| ADAS, DMS, braking, steering | ASIL C–D | Direct vehicle control with injury risk |
+
+**Two evidence types — do not conflate:**
+
+*ASIL evidence (Layer 1, ASIL workloads):*
+- Purpose: ISO 26262 Part 6 certification
+- Output: WCET with attributed root cause, countermeasure, residual risk
+- Standard: Certifiable — evaluator-reviewable
+- Language: "ASIL-B compliant WCET evidence"
+
+*QM evidence (Layer 2, IVI VirtIO workloads):*
+- Purpose: (1) QoS assurance — tail latency meets user-experience
+  threshold; (2) FFI non-interference — QM workload does not consume
+  resources that degrade co-located ASIL partitions
+- Output: P50/P99/P99.9/WCET distribution under stressor conditions,
+  bottleneck attribution, virglrenderer/backend CPU overhead
+- Standard: Engineering performance characterisation — not ISO 26262
+- Language: "QoS performance assurance and FFI non-interference
+  evidence for QM IVI VirtIO deployment"
+
+**Anti-pattern:** Describing IVI VirtIO latency measurement as
+"certifiable safety evidence" or citing ASIL levels for IVI functions.
+This misrepresents the safety classification, sets wrong customer
+expectations, and may create compliance risk if the customer's safety
+team reviews the deliverable.
+
+**The correct framing for the customer advisory:**
+> "Does VirtIO introduce latency or jitter that degrades user experience
+> below acceptable QoS thresholds, and does the QM IVI VirtIO workload
+> consume host resources in a way that could interfere with co-located
+> ASIL-rated partitions?"
+
+**Verification:** For any document section claiming safety evidence
+for IVI or VirtIO workloads, ask: is this function classified ASIL or
+QM by HARA? If QM, reframe as QoS assurance and FFI non-interference.
 
 ---
 
@@ -335,6 +396,101 @@ different latency profiles.
 
 ---
 
+### B5 — VirtIO Guest Timestamp Skew (Stolen Time)
+
+**Rule:** Guest-side eBPF timestamps in a VM include periods when the
+vCPU was de-scheduled by the hypervisor ("stolen time"). For VirtIO
+latency measurements, always assess stolen time exposure before trusting
+guest-only timing. When stolen time correction is unavailable or
+unconfirmed, use dual-side timestamping as a consistency check.
+
+**Rationale:** The hypervisor applies a clock offset to the guest but
+does not subtract periods when the vCPU was not running. Under host
+load, stolen time can inflate guest-side latency measurements by
+milliseconds, producing non-reproducible results and overstating the
+true VirtIO transport cost.
+
+**Stolen time correction support matrix (verify at each platform
+bring-up — support status changes across kernel and hypervisor versions):**
+
+| Hypervisor | Kernel config | Status |
+|---|---|---|
+| KVM | `CONFIG_PARAVIRT_TIME_ACCOUNTING` | Supported — enables stolen time correction via shared memory region (SMCCCv1.1 / Arm SBSA) |
+| QEMU TCG (software emulation) | N/A | Not supported — avoid for latency measurement |
+| Xen on Arm | `CONFIG_PARAVIRT_TIME_ACCOUNTING` | Check current patch status at bring-up time — patches in progress as of mid-2025 |
+
+**Dual-side consistency check — mandatory when hypervisor stolen
+time correction is absent or unconfirmed:**
+```
+Guest-side delta = T1_guest - T0_guest  ← may include stolen time
+Host-side delta  = T1_host  - T0_host   ← no stolen time distortion
+
+If guest_delta >> host_delta under load:
+    stolen time is inflating the guest measurement
+    → do not report as VirtIO transport cost
+If guest_delta ≈ host_delta:
+    stolen time is negligible for this load level
+    → guest measurement is valid
+```
+
+**Anti-pattern:** Reporting guest-only VirtIO latency numbers measured
+under heavy host load without a host-side cross-check. The result may
+be dominated by vCPU scheduling jitter rather than VirtIO transport
+overhead, making it irreproducible and non-attributable.
+
+**Verification:**
+```bash
+# Confirm stolen time correction is active on KVM guest
+dmesg | grep -i "stolen\|paravirt\|kvm-clock"
+zcat /proc/config.gz | grep PARAVIRT_TIME_ACCOUNTING
+
+# Confirm Xen stolen time status at bring-up
+# Check current Xen release notes and kernel changelog for:
+# "stolen time" OR "paravirt_time" on Arm
+```
+
+---
+
+### B6 — Tracepoint Verification Before eBPF Probe Authoring
+
+**Rule:** Before writing any eBPF probe for a VirtIO driver, verify
+the tracepoint names, field names, and availability from the kernel
+source tree on the exact kernel version running on the target. Do not
+derive tracepoint names from documentation descriptions, AI training
+data, or cross-version assumptions.
+
+**Rationale:** VirtIO driver tracepoints are not part of a stable ABI.
+They can be added, renamed, or removed across kernel versions. A probe
+attached to a non-existent or renamed tracepoint fails at load time or
+silently produces zero events — both failure modes are indistinguishable
+from a correctly running probe that observed no events.
+
+**Verification — mandatory before each new VirtIO device eBPF
+implementation, run on the actual target kernel:**
+```bash
+# List available tracepoints for each VirtIO driver subsystem
+sudo ls /sys/kernel/debug/tracing/events/virtio_gpu/   # GPU
+sudo ls /sys/kernel/debug/tracing/events/block/        # virtio-blk
+sudo ls /sys/kernel/debug/tracing/events/net/          # virtio-net
+sudo ls /sys/kernel/debug/tracing/events/input/        # virtio-input
+
+# Confirm field names used as BPF map keys (e.g. seqno, sector, skb ptr)
+cat /sys/kernel/debug/tracing/events/virtio_gpu/virtio_gpu_cmd_queue/format
+cat /sys/kernel/debug/tracing/events/block/block_rq_issue/format
+
+# Cross-check against kernel source on target
+grep -rn "TRACE_EVENT\|DEFINE_EVENT" drivers/gpu/drm/virtio/
+grep -rn "TRACE_EVENT\|DEFINE_EVENT" drivers/block/virtio_blk.c
+```
+
+**Anti-pattern:** Using tracepoint names from a document or a different
+kernel version without running the `ls /sys/kernel/debug/tracing/events/`
+check on the actual target. A renamed tracepoint produces a BPF load
+error that can be mistaken for a permissions or kernel config problem,
+wasting diagnosis time on the wrong root cause.
+
+---
+
 ## Domain C — Stressor Design
 
 *How to create adversarial conditions that bound WCET.*
@@ -416,11 +572,23 @@ evidence. For a WCET claim to be defensible to a safety reviewer,
 the dominant interference mechanism must be identified and its
 relationship to the outlier latency must be quantified.
 
-**Why this matters for certification:** ISO 26262 Part 6 requires
-freedom from interference (FFI) evidence. Saying "WCET is 168 μs"
-is insufficient. Saying "WCET is 168 μs; 99.1% of outliers are caused
-by raw_spinlock in __schedule() which is non-preemptible by design in
-RT-PREEMPT; countermeasure is XYZ" is a certifiable statement.
+**Why this matters — by layer:**
+
+*Layer 1 (OS primitive, ASIL workloads):* ISO 26262 Part 6 requires
+Freedom from Interference (FFI) evidence for ASIL-rated functions.
+Saying "WCET is 168 μs" is insufficient. Saying "WCET is 168 μs;
+99.1% of outliers are caused by raw_spinlock in __schedule() which
+is non-preemptible by design in RT-PREEMPT; countermeasure is XYZ"
+is a certifiable statement for ASIL-B and above safety goals.
+
+*Layer 2 (VirtIO / hypervisor, QM IVI workloads):* IVI functions
+(display, touch, audio, video, camera, network) are classified QM
+under ISO 26262 — no ASIL requirement applies. Attribution here
+serves two purposes: (1) QoS assurance — identifying the bottleneck
+so tail latency can be reduced to meet user-experience thresholds;
+(2) FFI non-interference evidence — bounding the resource consumption
+of the QM VirtIO workload to demonstrate it does not degrade
+co-located ASIL-rated partitions sharing the same SoC.
 
 **Attribution methodology (validated on Layer 1):**
 
@@ -523,6 +691,135 @@ given source require caution — may be statistical noise.
 
 ---
 
+### D4 — eBPF Hash Map Correlation for Async VirtIO Requests
+
+**Rule:** For any VirtIO device with asynchronous request/response
+semantics (virtio-gpu, virtio-blk, virtio-net), use a BPF hash map
+keyed by request ID to correlate T0 (submit tracepoint) with T1
+(completion tracepoint). Do not assume request/response ordering is
+FIFO — VirtIO rings do not guarantee ordering under concurrent requests
+at queue depth > 1.
+
+**Rationale:** The submit and completion events for a given VirtIO
+request may be separated by many other requests in the ring buffer.
+A single global timestamp variable produces wrong deltas whenever
+responses arrive out of order, without any error signal — the probe
+continues producing plausible but incorrect latency samples.
+
+**Pattern:**
+```c
+// At T0 submit tracepoint
+u64 ts = bpf_ktime_get_ns();
+bpf_map_update_elem(&start_map, &request_id, &ts, BPF_ANY);
+
+// At T1 completion tracepoint
+u64 *tsp = bpf_map_lookup_elem(&start_map, &request_id);
+if (tsp) {
+    u64 delta = bpf_ktime_get_ns() - *tsp;
+    // emit delta to per-CPU ring buffer
+    bpf_map_delete_elem(&start_map, &request_id);
+}
+```
+
+**Request ID field selection — verify from tracepoint format file
+on the actual target kernel (B6):**
+
+| Device | Candidate request ID field | Verify with |
+|---|---|---|
+| virtio-gpu | `seqno` | `cat .../virtio_gpu/virtio_gpu_cmd_queue/format` |
+| virtio-blk | `sector` or request pointer | `cat .../block/block_rq_issue/format` |
+| virtio-net | `skbaddr` pointer | `cat .../net/net_dev_xmit/format` |
+
+**Map size discipline:** Set BPF hash map `max_entries` to at least
+2× the expected maximum concurrent in-flight requests. A full map
+silently drops new T0 entries — the probe continues running but
+produces no output for those requests, biasing the measured WCET
+distribution downward.
+
+**Anti-pattern:** Using a single global timestamp variable and assuming
+FIFO completion ordering. Under queue depth > 1 or concurrent requests
+from multiple threads, this produces silent incorrect deltas with no
+observable error — the only symptom is an implausibly low WCET.
+
+---
+
+### D5 — SMMU IOTLB Cold-Miss as Layer 2 Attribution Dimension
+
+**Rule:** For any Layer 2 VirtIO device where the backend triggers physical
+device DMA (virtio-net NIC TX/RX, virtio-gpu GPU command DMA), ARM SMMUv3
+IOTLB miss rate and page table walk latency must be measured and attributed
+separately from VirtIO protocol overhead. SMMU IOTLB impact is a structural
+latency contributor — not a stressor-induced effect — and must not be
+conflated with VirtIO ring transport cost.
+
+**The correct causal model — two distinct latency paths:**
+
+```
+Path 1 — VirtIO ring / protocol path (SMMU NOT involved):
+  Guest driver writes descriptor to virtqueue ring
+  → kicks hypervisor (hypercall / eventfd)
+  → host backend reads descriptor from shared memory
+  → programs physical device DMA engine
+  SMMU: not in this path — shared memory is CPU-accessible by host VA→PA
+
+Path 2 — Physical device DMA path (SMMU IS involved):
+  Physical device DMA engine fetches/writes data buffer
+  → SMMU: StreamID → STE lookup → IOTLB check
+  → IOTLB hit:  fast (cached IPA→PA translation)
+  → IOTLB miss: Stage-2 page table walk
+                up to 4 memory accesses (ARM LPAE 4-level walk)
+                latency: tens to hundreds of nanoseconds per miss
+```
+
+**Measured impact (ARM SMMUv3 + virtio-net, reference ARM benchmark):**
+Without SMMU: TX ~5 Gbps. With SMMUv3 active: TX ~238 Mbps — 21× TX
+throughput degradation from structural Stage-2 translation overhead.
+RX degradation: ~4× (fewer SMMU lookups per packet than TX path).
+
+**Stressor interaction — important distinctions:**
+
+| Stressor | Effect on SMMU IOTLB | Mechanism |
+|---|---|---|
+| CPU stressor | None — SMMU IOTLB not affected | IOTLB is dedicated HW inside SMMU TBU, not part of CPU cache hierarchy |
+| Memory stressor | Minor: PTW memory BW contention only | Coherent PTW competes for DRAM/LLC BW on IOTLB miss — does NOT evict IOTLB entries |
+| I/O stressor | Direct: IOTLB capacity pressure | New DMA streams consume IOTLB entries — may evict existing NIC/GPU entries within fixed IOTLB size |
+| Baseline | Cold-start IOTLB misses only | First DMA to each buffer = guaranteed miss; warm steady-state = high hit rate |
+
+**Anti-pattern:** Stating that CPU memory stressor (stress-ng --vm) evicts SMMU
+IOTLB entries via LLC pressure. The SMMU IOTLB is a dedicated hardware
+structure inside the SMMU TBU — CPU cache eviction has no direct path to it.
+The correct secondary effect is: coherent PTW memory accesses compete with
+CPU for DRAM bandwidth on IOTLB miss, increasing PTW latency — not IOTLB
+eviction.
+
+**Measurement — SMMUv3 PMU:**
+```bash
+# Verify SMMUv3 PMU available on target at bring-up:
+dmesg | grep -i "smmu\|arm-smmu-v3-pmcg"
+ls /sys/bus/platform/drivers/arm-smmu-v3-pmcg/
+
+# Key events to capture during VirtIO latency outlier windows:
+# - Translation cache miss count (IOTLB misses)
+# - TLB invalidation count (TLBI operations)
+# Cross-correlate with VirtIO latency P99.9 outliers
+```
+
+**Countermeasure — hugepage DMA buffers:**
+Allocating NIC TX/RX ring buffers on 2M hugepages reduces IOTLB entries
+required to cover the same buffer pool, increasing IOTLB hit rate at
+steady state. Compare VirtIO-net P99.9 with 4K pages vs 2M hugepages.
+
+**Verification gate — before Layer 2 measurement begins:**
+```
+□ SMMUv3 driver confirmed active: dmesg | grep arm-smmu-v3
+□ SMMUv3 PMU confirmed available: ls /sys/bus/platform/drivers/arm-smmu-v3-pmcg/
+□ Coherent PTW status confirmed: dmesg | grep "coherent walk"
+□ IOTLB miss rate measured at baseline: confirm warm hit rate ≥ 95%
+   before stressor scenarios begin
+```
+
+---
+
 ## Domain E — Platform Configuration and Reproducibility
 
 *How to establish a controlled measurement environment.*
@@ -611,6 +908,47 @@ branch predictor, and memory subsystem than Cortex-A72 (RPi4B). The
 Layer 1 interference channel profile will differ. The Layer 2
 virtualisation tax must be computed as (Layer 2 A76) - (Layer 1 A76),
 not (Layer 2 A76) - (Layer 1 A72).
+
+---
+
+### E4 — QEMU PoC Validity Scope
+
+**Rule:** QEMU KVM PoC results validate measurement methodology and
+toolchain correctness — not absolute latency values for production
+claims. QEMU numbers must never be cited as the virtualisation tax
+for a production hypervisor on target hardware without explicit
+qualification.
+
+**What a QEMU PoC validates:**
+- eBPF probe correctness: tracepoints attach, hash map correlation
+  produces non-zero samples, no dropped events under stressor load
+- CSV emission pipeline integrity: no buffered I/O corruption under
+  RT stressor (apply `open()`+`write()` discipline from Layer 1)
+- Stressor integration: interference channels are active and produce
+  measurable WCET variation
+- Statistical pipeline: P50/P99/WCET calculation and reporting are
+  correct
+- Dual-side timestamp consistency: stolen time assessment methodology
+  produces a interpretable host vs guest delta comparison
+
+**What a QEMU PoC does NOT validate:**
+- Absolute VirtIO latency numbers for the production target
+  (x86 KVM ≠ Xen on Arm A76 — different hypervisor, ISA, and
+  interrupt controller)
+- Xen-specific VM exit overhead and scheduler interaction
+- Target SoC GIC interrupt routing latency
+- Real hardware VirtIO backend performance
+
+**Publication constraint:** QEMU PoC numbers may appear in methodology
+sections to document toolchain validation ("instrumentation verified
+on QEMU KVM before porting to target hardware"). They must not appear
+in result tables alongside target hardware Layer 2 numbers without
+explicit labelling distinguishing the two platforms.
+
+**Anti-pattern:** Using a QEMU PoC WCET number as a proxy for the
+production hardware VirtIO tax in a customer advisory or conference
+presentation. The architectural differences between x86 KVM and
+Arm hypervisors make the numbers non-transferable.
 
 ---
 
@@ -703,7 +1041,10 @@ the results is the only qualified signatory for the numbers.
 Domain A — Metric definition:
 □ Is the metric precisely defined (T0, T1, what is being measured)?
 □ Is the platform primitive correct for this metric and OS?
-□ Is the IMLat primitive the one a safety application would use?
+□ Is the IMLat primitive the one a latency-sensitive application would use?
+□ Is the workload ASIL-rated or QM? (A4)
+  If ASIL → frame output as ISO 26262 certification evidence
+  If QM (IVI/VirtIO) → frame as QoS assurance + FFI non-interference
 
 Domain B — Timing methodology:
 □ Has clock domain been verified on this hardware (gpio_clock_probe)?
@@ -711,25 +1052,79 @@ Domain B — Timing methodology:
 □ Is the hot path free of I/O, allocation, and non-essential syscalls?
 □ Is mlockall and pre-fault specified in _init()?
 □ Is warmup iteration count specified?
+□ For VirtIO eBPF: has stolen time exposure been assessed (B5)?
+□ For VirtIO eBPF: have tracepoints been enumerated on target kernel (B6)?
 
 Domain C — Stressor design:
 □ Is the stressor mapped to a real deployment interference channel?
 □ Is stressor configuration (worker count, memory) specified exactly?
 □ Is baseline (idle) scenario included?
+□ For Layer 2: are stressors placed on host or guest — documented?
 
 Domain D — Attribution:
 □ Are PMU counters selected for this specific metric?
 □ Is outlier threshold defined (P99.9)?
 □ Is ftrace plan specified for scheduler-dominated metrics?
+□ For VirtIO eBPF: is request ID field verified from tracepoint format (D4)?
+□ For VirtIO eBPF: is BPF map max_entries sized for concurrent requests (D4)?
+□ For Layer 2 devices with physical DMA (virtio-net, virtio-gpu):
+  Is SMMUv3 PMU available on target? (D5)
+  Is IOTLB baseline miss rate established before stressor runs? (D5)
+  Is hugepage DMA buffer comparison planned as countermeasure? (D5)
 
 Domain E — Platform configuration:
 □ Is CPU isolation configuration documented?
 □ Is RT priority and governor specified?
 □ For new hardware: has Layer 1 revalidation checklist been run?
+□ Is QEMU PoC scope clearly distinguished from production target (E4)?
+□ For Sparrow Hawk: has partition topology verification been completed
+  and all INFERRED items promoted to VERIFIED? (see PROJECT_CONTEXT.md
+  Layer 2 Bring-Up Gate)
 
 If any answer is "I don't know" — resolve in design session before
 handing to Claude Code.
 ```
+
+---
+
+### F5 — Kernel Source is Authoritative for VirtIO Tracepoints
+
+**Rule:** The kernel source tree and the live
+`/sys/kernel/debug/tracing/events/` filesystem on the target are the
+authoritative specifications for VirtIO driver tracepoint names,
+field names, and availability. Any external reference — documentation,
+design notes, prior implementation — is a design reference only, not
+an implementation specification. Verify every tracepoint name and
+field from the target kernel before writing any eBPF probe.
+
+**Rationale:** VirtIO driver tracepoints are internal kernel interfaces
+with no stability guarantee across kernel versions. A tracepoint name
+confirmed on kernel 6.6 may not exist on 6.12, and vice versa.
+Documentation describing a tracepoint may reflect a different kernel
+version than the target. The only version-accurate source is the
+target kernel itself.
+
+**Mandatory verification sequence before any VirtIO eBPF probe:**
+```bash
+# Step 1 — confirm tracepoint exists on target kernel
+sudo ls /sys/kernel/debug/tracing/events/<subsystem>/
+
+# Step 2 — confirm field names used as correlation keys
+cat /sys/kernel/debug/tracing/events/<subsystem>/<tracepoint>/format
+
+# Step 3 — cross-check against kernel source for this version
+grep -rn "TRACE_EVENT" drivers/<subsystem>/
+
+# Only after steps 1-3 confirm the tracepoint and fields:
+# write the eBPF probe using the verified names
+```
+
+**Anti-pattern:** Writing an eBPF probe using a tracepoint name from
+any source other than the live target kernel filesystem or its source
+tree. Even if the name was correct on a similar kernel version, the
+probe will silently fail to attach or produce zero events without a
+clear error — the failure mode mimics a correctly running probe that
+observed no matching events.
 
 ---
 
@@ -739,6 +1134,7 @@ handing to Claude Code.
 |---|---|---|
 | 1.0 | May 2026 | Initial release. Six domains, 20 principles. Derived from unified POSIX-compliant RTOS benchmark framework — EW2026 validated results, Layer 1 complete. Authors: Lei Zhou + Claude (Anthropic). |
 | 1.1 | May 2026 | Updated from AGL AMM 2026 deck review. D1: added full per-metric attribution table (TSLat/PreLat/MuLat/InLat/IMLat) with primary cause, HW PMU signal, worst stressor, and countermeasure for each metric; added key architectural implication (TSLat/PreLat have no software countermeasure — irreducible by RT-PREEMPT design). E1: corrected platform config — isolcpus=3 (not 2-3), nohz_full exclusion documented with rationale, idle state WFI-only added, IRQ affinity detail added (all IRQs to CPU0-2, GPIO145 pinned back to CPU3). Sanitized for public release: proprietary RTOS vendor names replaced with generic equivalents. |
+| 1.4 | May 2026 | Added D5 — SMMU IOTLB Cold-Miss as Layer 2 Attribution Dimension. Captures: SMMU IS on physical device DMA path (not VirtIO ring path); structural Stage-2 translation overhead (21× TX throughput impact, reference ARM SMMUv3 benchmark); correct stressor-SMMU interaction (CPU stressor does NOT evict IOTLB — dedicated HW in SMMU TBU; I/O stressor is the correct IOTLB pressure mechanism; memory stressor only affects PTW DRAM BW on coherent PTW miss); SMMUv3 PMU measurement method; hugepage countermeasure. F4 checklist extended: Domain D SMMU gate items (D5 PMU availability, IOTLB baseline, hugepage comparison); Domain E partition topology verification gate. Source: SMMU/VirtIO architectural analysis session — corrected earlier wrong claim that SMMU has no impact on VirtIO data path. |
 
 ---
 

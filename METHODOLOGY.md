@@ -6,7 +6,7 @@ https://creativecommons.org/licenses/by/4.0/
 
 # AI-Assisted Embedded Systems Engineering Methodology
 
-**Version:** 1.7 (filename: METHODOLOGY.md — version-free)  
+**Version:** 1.8 (filename: METHODOLOGY.md — version-free)  
 **Origin:** Derived from a TF-M PSA-L2 firmware porting project and a Qualcomm SoC BSP bring-up project  
 **Authors:** Lei Zhou + Claude (Anthropic)  
 **Scope:** Any complex embedded firmware project using AI code generation
@@ -624,6 +624,187 @@ Open Item (OI-NNN) entries in the project SSoT. INFERRED and ASSUMED gaps
 must be verified first — they are not promoted to OI entries until confirmed.
 This prevents the OI register from filling with speculative items that consume
 triage time without representing real blockers.
+
+---
+
+## Evidence Tier Protocol for Generated Content
+
+### The Problem This Solves
+
+The Gap Analysis Evidence Protocol (above) is applied when the AI is
+explicitly performing diagnostic analysis — gap identification, readiness
+checks, architecture reviews. It is not automatically applied when the AI
+generates prose, table rows, document sections, or deliverable content.
+
+This is a structural failure mode: confident assertion without evidence tier
+is the natural output of a language model generating coherent prose. The
+human is left as the sole error-detection mechanism — catching errors only
+if they notice something feels wrong. For hardware-specific claims, systems
+architecture, or standards interpretation, the human may not have the
+specific knowledge to catch the error at all, and the AI's confident tone
+provides no signal that verification is needed.
+
+**Concrete failure examples from this project:**
+- Platform stack table stated "Dom0: Linux RT-PREEMPT" — ASSUMED from common
+  Xen deployment patterns, not from any AGL SoDeV documentation. No tier
+  flag appeared in the table. Human caught it only because they knew to ask.
+- Advisory proposal stated "SMMU has no impact on VirtIO device pipeline
+  performance" — ASSUMED from a partial understanding of VirtIO shared memory
+  transport. No tier flag. Human caught it via domain expertise.
+
+In both cases, the AI provided no signal. The human was the only safeguard.
+This protocol moves the safeguard earlier — to the point of generation.
+
+### The Rule
+
+**After generating any section of technical content — a table, a prose
+paragraph, a specification claim, an architecture description, a platform
+stack row, or any deliverable section — the AI must immediately produce
+an Evidence Audit for that section, unprompted.**
+
+The human reviews the audit before accepting the content. Any INFERRED
+or ASSUMED claim requires human confirmation or source verification before
+the content is considered final.
+
+This applies to ALL generated content, not only gap analysis. The protocol
+does not activate on request — it activates automatically on every generation
+of technical content.
+
+### Evidence Audit Format
+
+Immediately after generating a section, the AI produces:
+
+```
+Evidence Audit — [Section name]
+
+Claim: [exact claim from the generated content]
+Tier:  [VERIFIED | INFERRED | ASSUMED]
+Source: [what the tier is based on — document, search result, training data]
+If INFERRED or ASSUMED:
+  Verify with: [exact command or source to confirm]
+  Risk if wrong: [what breaks if this claim is incorrect]
+
+Claim: [next claim]
+...
+```
+
+VERIFIED claims require no human action.
+INFERRED claims require the human to run the verification command or
+accept the inference explicitly.
+ASSUMED claims must not appear in external deliverables without being
+promoted to INFERRED or VERIFIED first.
+
+### Two Presentation Modes
+
+The evidence tier protocol is non-negotiable. The presentation format
+adapts to the audience.
+
+**Internal documents** (PROJECT_CONTEXT.md, design specs, architecture
+descriptions, session notes):
+- Evidence tiers appear inline on every technical claim
+- Format: `[VERIFIED]`, `[INFERRED]`, `[ASSUMED]` markers in the text
+- Gap analysis format used for INFERRED/ASSUMED items
+- Example: "Dom0 runs Linux AGL UCB `[INFERRED]` — verify with `uname -a`
+  in Dom0 after first boot"
+
+**External deliverables** (customer proposals, conference papers, slides,
+advisory documents):
+- Evidence tiers do NOT appear inline — unprofessional for customer content
+- Instead: Evidence Audit produced as a companion section BEFORE the
+  document is considered final
+- Human reviews audit, confirms all INFERRED/ASSUMED items, or requests
+  revision
+- Only after human sign-off is the document released
+- Any ASSUMED claim that cannot be promoted must be rewritten as a
+  conditional statement: "Subject to bring-up confirmation..." or
+  "Based on [source], pending hardware verification..."
+
+### What the Human Does with the Audit
+
+The audit is not a formality. For each INFERRED or ASSUMED claim:
+
+1. **If the human can confirm from their own knowledge:** state the
+   confirmation explicitly. The AI updates the tier to VERIFIED and
+   notes the confirmation source.
+
+2. **If the human cannot confirm:** run the verification command. Paste
+   output back into the session. AI updates tier and content accordingly.
+
+3. **If the claim cannot be verified yet** (hardware not arrived, source
+   not accessible): rewrite the claim as explicitly conditional. Never
+   leave an ASSUMED claim stated as fact in a deliverable.
+
+### The Human's Standing Authority — Extended
+
+The standing authority principle from the Gap Analysis Protocol applies
+here equally: if a claim in the evidence audit does not match the human's
+knowledge or direct observation, that is a valid signal the AI is wrong.
+The human pushes back. The AI re-examines from scratch.
+
+**The human is not expected to catch errors — the audit is.** If the human
+is routinely catching errors that the audit should have flagged, the audit
+was not applied correctly.
+
+### Anti-Pattern — Confident Prose Without Audit
+
+**Wrong:** Generating a platform stack table with "Dom0: Linux RT-PREEMPT"
+and no audit. The claim sounds authoritative. The human has no signal that
+it requires verification. Error propagates into deliverable.
+
+**Correct:** Generating the platform stack table, then immediately:
+
+```
+Evidence Audit — Platform Stack Table
+
+Claim: Dom0 runs Linux RT-PREEMPT
+Tier:  ASSUMED
+Source: Training data — common Xen Dom0 deployment pattern. No AGL SoDeV
+        documentation explicitly states Dom0 kernel RT configuration.
+Verify with: uname -r in Dom0 after first Sparrow Hawk boot
+             zcat /proc/config.gz | grep CONFIG_PREEMPT_RT
+Risk if wrong: VirtIO backend scheduling jitter characterisation is wrong;
+               Dom0 interference model in Layer 2 measurement is incorrect
+
+Claim: DomU runs AGL Weston IVI compositor
+Tier:  INFERRED
+Source: AGL UCB described as "Linux-based platform for IVI and telematics";
+        Weston referenced in AGL IVI documentation
+Verify with: ps aux | grep weston inside DomU after boot
+Risk if wrong: DomU workload model in proposal is incorrect
+```
+
+The human sees the audit before accepting the table. ASSUMED items are
+rewritten as conditional until hardware confirms them.
+
+### Scope — When This Protocol Activates
+
+The protocol activates on generation of any content containing:
+- Hardware specifications or configurations
+- OS or kernel version claims
+- Standards compliance assertions (ASIL, QM, ISO references)
+- Architecture descriptions (which component runs where)
+- Timing or latency claims
+- API or interface behaviour claims
+- Platform or tool capability claims
+
+It does NOT activate on:
+- Pure methodology discussion (no hardware-specific claims)
+- Restating already-verified project context from PROJECT_CONTEXT.md
+- Mathematical or statistical derivations from provided data
+- Formatting, structuring, or editing existing verified content
+
+### Document History Entry
+
+When this protocol prevents an error from reaching a deliverable, record
+it in the project Change Notice register with:
+- What claim was INFERRED or ASSUMED
+- What the audit flagged
+- What verification confirmed or corrected
+- Which document was protected
+
+This creates a record of the protocol working — and over time identifies
+which claim categories are most frequently wrong, informing future
+verification priorities.
 
 ---
 
@@ -1414,6 +1595,7 @@ Projects where this methodology adds less value:
 | 1.5 | 2026-05-08 | Added Gap Analysis Evidence Protocol section: three evidence tiers (VERIFIED / INFERRED / ASSUMED), required gap statement format, human standing authority rule, protocol failure examples. Added two new Known AI Failure Modes: pattern-match without verification, misreading under pattern-matching pressure. Derived from a Qualcomm SoC BSP readiness analysis session. |
 | 1.6 | 2026-05-21 | Added Domain Architecture Documents section — framework for domain-specific companion documents. Added YOCTO_BSP_ARCH.md as first domain architecture document reference. Added three new Known AI Failure Modes: layer capability blindness, expedient pattern replication, abstraction layer confusion. Derived from a Qualcomm SoC BSP Yocto code review. Added CC BY 4.0 licence. |
 | 1.7 | 2026-05-22 | Added destructive operation audit to pre-implementation checklist. Derived from a BSP bring-up session data loss — adopted .inc ran find -delete against live prebuilts directory when S was redirected to a vendor prebuilts path as fetch bypass. Generalised: any adopted upstream component that runs destructive operations must be audited for path ownership before implementation. Cross-references YOCTO_BSP_ARCH E6 and F6. |
+| 1.8 | 2026-05-25 | Added Evidence Tier Protocol for Generated Content section. Extends the Gap Analysis Evidence Protocol from diagnostic contexts to all generated technical content — table rows, prose sections, architecture descriptions, specification claims, and deliverable content. Key additions: mandatory unprompted Evidence Audit after every technical content generation; two presentation modes (inline markers for internal docs, companion audit for external deliverables); anti-pattern with concrete correction example; scope definition (when protocol activates and when it does not); document history entry discipline. Source: RTOS benchmark VirtIO advisory session — two errors (Dom0 RT-PREEMPT stated as fact, SMMU VirtIO impact dismissed) propagated into deliverables without audit signal. Protocol moves error detection from human catch to generation-time obligation. |
 
 ---
 
