@@ -6,11 +6,11 @@ https://creativecommons.org/licenses/by/4.0/
 
 # BSP Engineering Knowledge Registry
 
-**Version:** 1.2
+**Version:** 1.3
 **Date:** May 2026
 **Author:** Lei Zhou + Claude (Anthropic)
 **Licence:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-**Repository:** https://github.com/<your-org>/bsp-engineering-knowledge
+**Repository:** https://github.com/zlhk100/bsp-engineering-knowledge
 
 ---
 
@@ -130,6 +130,8 @@ new topic.
 | **PCIe and SMMU** | PCIe switch, iommu-map, msi-map, SMMU stream IDs, SID mapping, DTS PCIe nodes, PCIe endpoint driver, QHEE ITS limit, RID translation, of_pci_map_rid | `PCIE_BSP_ARCH.md` |
 | **Ethernet BSP** | PHY driver, MAC configuration, MDIO, SGMII/USXGMII/RGMII, dwmac, stmmac, PHY bring-up, iperf3 validation, Ethernet DTS nodes | `ETHERNET_BSP_ARCH.md` |
 | **USB and Storage** | xHCI, UAS quirk, usb-storage, USB bridge, NVMe, SD block layer, USB firmware blob loading, USB quirk table | `USB_STORAGE_ARCH.md` |
+| **U-Boot** | U-Boot porting, DM drivers, environment, FIT images, SPL, board init, DTS, Kconfig, defconfig, distro boot | `UBOOT_ARCH.md` |
+| **Zephyr RTOS** | Zephyr board porting, device tree, Kconfig, west workspace, shields, drivers, RTOS integration, Zephyr application | `ZEPHYR_ARCH.md` |
 
 ### Domain document status
 
@@ -140,12 +142,14 @@ pre-implementation checklist as a fallback. Do not skip domain constraints.
 | File | Status | Notes |
 |---|---|---|
 | `METHODOLOGY.md` | ✅ Always available | Always active |
-| `YOCTO_BSP_ARCH.md` | ✅ Available | v1.0 May 2026 |
+| `YOCTO_BSP_ARCH.md` | ✅ Available | v1.2 May 2026 |
 | `FIRMWARE_PORT_ARCH.md` | 🔲 Planned | Derive from TF-M firmware porting project experience |
 | `BOOT_CHAIN_ARCH.md` | 🔲 Planned | Derive from Qualcomm SoC BSP boot chain bring-up experience |
 | `PCIE_BSP_ARCH.md` | 🔲 Planned | Derive from Qualcomm SoC BSP PCIe bring-up experience |
 | `ETHERNET_BSP_ARCH.md` | 🔲 Planned | Derive from Qualcomm SoC BSP Ethernet bring-up experience |
 | `USB_STORAGE_ARCH.md` | 🔲 Planned | Derive from Qualcomm SoC BSP storage bring-up experience |
+| `UBOOT_ARCH.md` | 🔲 Planned | Derive from U-Boot porting and board bring-up experience |
+| `ZEPHYR_ARCH.md` | 🔲 Planned | Derive from Zephyr RTOS board porting experience |
 
 ---
 
@@ -186,8 +190,9 @@ patch via bbappend.
 New domain detected: **Yocto BSP** → read `YOCTO_BSP_ARCH.md`
 
 Constraint applied immediately:
-- Is there a topic branch structure? If patch count > 3, propose topic
-  branches before adding more.
+- Is there a topic branch structure? Topic branch structure must
+  exist before any patch is added. Never generate SRC_URI patch
+  entries — even the first one.
 
 ---
 
@@ -440,7 +445,7 @@ Closes #issue (if applicable)
 
 **Scopes:** `registry`, `methodology`, `yocto-bsp-arch`,
 `boot-chain-arch`, `pcie-bsp-arch`, `ethernet-bsp-arch`,
-`usb-storage-arch`, `firmware-port-arch`
+`usb-storage-arch`, `firmware-port-arch`, `uboot-arch`, `zephyr-arch`
 
 ---
 
@@ -477,6 +482,7 @@ project using the same technology?
 | 1.0 | May 2026 | Initial release. Six domains registered. YOCTO_BSP_ARCH available. Five domains planned. |
 | 1.1 | May 2026 | Switched to version-free filenames. Fixed flat file references. Added PROJECT_CONTEXT.md convention. Removed version coupling. |
 | 1.2 | May 2026 | Added comprehensive Maintenance Protocol (Protocols 1–4). Version numbering policy. Commit message convention. Knowledge base vs project context boundary definition. Absorbed standalone "Adding a New Domain" section into Protocol 2. |
+| 1.3 | May 2026 | Added U-Boot and Zephyr RTOS as planned domains (registry table + status table). Fixed repository URL placeholder. Updated YOCTO_BSP_ARCH.md status to v1.2. Updated domain shift example to reflect D2 first-patch gate. |
 
 ---
 
