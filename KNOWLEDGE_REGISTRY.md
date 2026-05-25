@@ -6,11 +6,11 @@ https://creativecommons.org/licenses/by/4.0/
 
 # BSP Engineering Knowledge Registry
 
-**Version:** 1.3
+**Version:** 1.4
 **Date:** May 2026
 **Author:** Lei Zhou + Claude (Anthropic)
 **Licence:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-**Repository:** https://github.com/zlhk100/bsp-engineering-knowledge
+**Repository:** https://github.com/<your-org>/bsp-engineering-knowledge
 
 ---
 
@@ -130,8 +130,9 @@ new topic.
 | **PCIe and SMMU** | PCIe switch, iommu-map, msi-map, SMMU stream IDs, SID mapping, DTS PCIe nodes, PCIe endpoint driver, QHEE ITS limit, RID translation, of_pci_map_rid | `PCIE_BSP_ARCH.md` |
 | **Ethernet BSP** | PHY driver, MAC configuration, MDIO, SGMII/USXGMII/RGMII, dwmac, stmmac, PHY bring-up, iperf3 validation, Ethernet DTS nodes | `ETHERNET_BSP_ARCH.md` |
 | **USB and Storage** | xHCI, UAS quirk, usb-storage, USB bridge, NVMe, SD block layer, USB firmware blob loading, USB quirk table | `USB_STORAGE_ARCH.md` |
-| **U-Boot** | U-Boot porting, DM drivers, environment, FIT images, SPL, board init, DTS, Kconfig, defconfig, distro boot | `UBOOT_ARCH.md` |
-| **Zephyr RTOS** | Zephyr board porting, device tree, Kconfig, west workspace, shields, drivers, RTOS integration, Zephyr application | `ZEPHYR_ARCH.md` |
+| **U-Boot** | U-Boot porting, DM drivers, U-Boot environment, FIT images, SPL, board init, U-Boot Kconfig, defconfig, distro boot, bootcmd, DTS in U-Boot | `UBOOT_ARCH.md` |
+| **Zephyr RTOS** | Zephyr board porting, Zephyr device tree, Zephyr Kconfig, west workspace, shields, Zephyr drivers, zephyr.conf, prj.conf, Zephyr modules | `ZEPHYR_ARCH.md` |
+| **RTOS Benchmark** | RTOS benchmark, WCET, OS primitive latency, task switching, task preemption, IRQ latency, mutex, IMLat, intertask messaging, stressor, PMU attribution, ftrace, mixed criticality, RT-PREEMPT, microkernel RTOS, IEC 61508, ISO 26262 latency evidence, ROS 2 latency, VirtIO overhead, OpenAMP, AMP IPC, micro-ROS, VLA inference latency | `RTOS_BENCH_ARCH.md` |
 
 ### Domain document status
 
@@ -148,8 +149,9 @@ pre-implementation checklist as a fallback. Do not skip domain constraints.
 | `PCIE_BSP_ARCH.md` | 🔲 Planned | Derive from Qualcomm SoC BSP PCIe bring-up experience |
 | `ETHERNET_BSP_ARCH.md` | 🔲 Planned | Derive from Qualcomm SoC BSP Ethernet bring-up experience |
 | `USB_STORAGE_ARCH.md` | 🔲 Planned | Derive from Qualcomm SoC BSP storage bring-up experience |
-| `UBOOT_ARCH.md` | 🔲 Planned | Derive from U-Boot porting and board bring-up experience |
-| `ZEPHYR_ARCH.md` | 🔲 Planned | Derive from Zephyr RTOS board porting experience |
+| `UBOOT_ARCH.md` | 🔲 Planned | U-Boot porting, DM driver model, FIT images, SPL |
+| `ZEPHYR_ARCH.md` | 🔲 Planned | Zephyr RTOS board porting, west workspace, Kconfig |
+| `RTOS_BENCH_ARCH.md` | ✅ Available | v1.1 May 2026 — WCET benchmarking, mixed criticality safety |
 
 ---
 
@@ -190,9 +192,8 @@ patch via bbappend.
 New domain detected: **Yocto BSP** → read `YOCTO_BSP_ARCH.md`
 
 Constraint applied immediately:
-- Is there a topic branch structure? Topic branch structure must
-  exist before any patch is added. Never generate SRC_URI patch
-  entries — even the first one.
+- Is there a topic branch structure? If patch count > 3, propose topic
+  branches before adding more.
 
 ---
 
@@ -445,7 +446,7 @@ Closes #issue (if applicable)
 
 **Scopes:** `registry`, `methodology`, `yocto-bsp-arch`,
 `boot-chain-arch`, `pcie-bsp-arch`, `ethernet-bsp-arch`,
-`usb-storage-arch`, `firmware-port-arch`, `uboot-arch`, `zephyr-arch`
+`usb-storage-arch`, `firmware-port-arch`, `uboot-arch`, `zephyr-arch`, `rtos-bench-arch`
 
 ---
 
@@ -482,7 +483,8 @@ project using the same technology?
 | 1.0 | May 2026 | Initial release. Six domains registered. YOCTO_BSP_ARCH available. Five domains planned. |
 | 1.1 | May 2026 | Switched to version-free filenames. Fixed flat file references. Added PROJECT_CONTEXT.md convention. Removed version coupling. |
 | 1.2 | May 2026 | Added comprehensive Maintenance Protocol (Protocols 1–4). Version numbering policy. Commit message convention. Knowledge base vs project context boundary definition. Absorbed standalone "Adding a New Domain" section into Protocol 2. |
-| 1.3 | May 2026 | Added U-Boot and Zephyr RTOS as planned domains (registry table + status table). Fixed repository URL placeholder. Updated YOCTO_BSP_ARCH.md status to v1.2. Updated domain shift example to reflect D2 first-patch gate. |
+| 1.3 | May 2026 | Added U-Boot and Zephyr RTOS as formally registered planned domains (registry table + status table). Fixed YOCTO_BSP_ARCH status table version (1.0 → 1.2). Added uboot-arch and zephyr-arch to commit message scopes. Source: GAP-1 identified in Session 1 of the methodology project — README listed both domains aspirationally; human confirmed formal registration. |
+| 1.4 | May 2026 | Added RTOS Benchmark as formally registered available domain (RTOS_BENCH_ARCH.md v1.0). Covers WCET benchmarking, OS primitive metrics, PMU attribution, mixed-criticality safety, Layer 1–4 architecture (bare-metal through AMP/AI inference). Added rtos-bench-arch commit scope. Source: unified RTOS benchmark framework migration to methodology. |
 
 ---
 
