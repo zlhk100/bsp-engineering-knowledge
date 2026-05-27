@@ -6,7 +6,7 @@ https://creativecommons.org/licenses/by/4.0/
 
 # BSP Engineering Knowledge Registry
 
-**Version:** 1.4
+**Version:** 1.6
 **Date:** May 2026
 **Author:** Lei Zhou + Claude (Anthropic)
 **Licence:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
@@ -126,8 +126,9 @@ new topic.
 |---|---|---|
 | **Yocto BSP** | recipes (.bb/.bbappend), kas config, BitBake, meta-layer structure, SRCREV, kernel patches, DTS authoring, firmware staging recipe, distro conf, machine conf, image recipe, sstate, devtool, OpenEmbedded | `YOCTO_BSP_ARCH.md` |
 | **Secure Firmware** | TF-M, PSA certification, CMSIS HAL porting, secure boot, attestation, crypto keys, NV counters, ITS/PS partition, SFN/IPC backend, isolation, FIH, RPMB, smcinvoke | `FIRMWARE_PORT_ARCH.md` |
-| **Boot Chain** | XBL, UEFI, bootloader bring-up, partition table, qdl, edl, fastboot, abl, cdt.bin, non-HLOS binaries, DCB version lock, PMIC init, DDR training, TZ, QSEE | `BOOT_CHAIN_ARCH.md` |
-| **PCIe and SMMU** | PCIe switch, iommu-map, msi-map, SMMU stream IDs, SID mapping, DTS PCIe nodes, PCIe endpoint driver, QHEE ITS limit, RID translation, of_pci_map_rid | `PCIE_BSP_ARCH.md` |
+| **Embedded Security Architecture** | PSA certification scope, CRA compliance, secure storage design, key derivation hierarchy, attestation, non-securable NVM, AES-GCM-SIV, trust model, threat model, JSADEN, protection profile, EN 304 623, EN 304 626, TR-MISO, trust boundary | `SECURITY_ARCH_KNOWLEDGE.md` |
+| **Boot Chain** | UEFI, bootloader bring-up, secure boot, partition table, device provisioning, DDR training, power management init, firmware staging, version lock, bootloader recovery, first-stage bootloader, second-stage bootloader | `BOOT_CHAIN_ARCH.md` |
+| **PCIe and SMMU** | PCIe switch, iommu-map, msi-map, SMMU stream IDs, SID mapping, DTS PCIe nodes, PCIe endpoint driver, ITS limit, RID translation, of_pci_map_rid | `PCIE_BSP_ARCH.md` |
 | **Ethernet BSP** | PHY driver, MAC configuration, MDIO, SGMII/USXGMII/RGMII, dwmac, stmmac, PHY bring-up, iperf3 validation, Ethernet DTS nodes | `ETHERNET_BSP_ARCH.md` |
 | **USB and Storage** | xHCI, UAS quirk, usb-storage, USB bridge, NVMe, SD block layer, USB firmware blob loading, USB quirk table | `USB_STORAGE_ARCH.md` |
 | **U-Boot** | U-Boot porting, DM drivers, environment, FIT images, SPL, board init, DTS, Kconfig, defconfig, distro boot | `UBOOT_ARCH.md` |
@@ -144,11 +145,12 @@ pre-implementation checklist as a fallback. Do not skip domain constraints.
 |---|---|---|
 | `METHODOLOGY.md` | ✅ Always available | Always active |
 | `YOCTO_BSP_ARCH.md` | ✅ Available | v1.2 May 2026 |
-| `FIRMWARE_PORT_ARCH.md` | 🔲 Planned | Derive from TF-M firmware porting project experience |
-| `BOOT_CHAIN_ARCH.md` | 🔲 Planned | Derive from Qualcomm SoC BSP boot chain bring-up experience |
-| `PCIE_BSP_ARCH.md` | 🔲 Planned | Derive from Qualcomm SoC BSP PCIe bring-up experience |
-| `ETHERNET_BSP_ARCH.md` | 🔲 Planned | Derive from Qualcomm SoC BSP Ethernet bring-up experience |
-| `USB_STORAGE_ARCH.md` | 🔲 Planned | Derive from Qualcomm SoC BSP storage bring-up experience |
+| `FIRMWARE_PORT_ARCH.md` | ✅ Available | v1.0 May 2026 — TF-M PSA-L2 porting, Domains A–F |
+| `SECURITY_ARCH_KNOWLEDGE.md` | 🔲 Planned | Derive from TF-M PSA-L2 project + CRA analysis — MB-004 |
+| `BOOT_CHAIN_ARCH.md` | 🔲 Planned | Derive from embedded SoC BSP boot chain bring-up experience |
+| `PCIE_BSP_ARCH.md` | 🔲 Planned | Derive from embedded SoC BSP PCIe bring-up experience |
+| `ETHERNET_BSP_ARCH.md` | 🔲 Planned | Derive from embedded SoC BSP Ethernet bring-up experience |
+| `USB_STORAGE_ARCH.md` | 🔲 Planned | Derive from embedded SoC BSP storage bring-up experience |
 | `UBOOT_ARCH.md` | 🔲 Planned | Derive from U-Boot porting and board bring-up experience |
 | `ZEPHYR_ARCH.md` | 🔲 Planned | Derive from Zephyr RTOS board porting experience |
 | `RTOS_BENCH_ARCH.md` | ✅ Available | v1.4 May 2026 — WCET benchmarking, OS primitive metrics, PMU attribution, mixed-criticality safety, Layer 1–4 architecture, VirtIO overhead, SMMU attribution |
@@ -328,7 +330,7 @@ project file. Upload updated `KNOWLEDGE_REGISTRY.md`.
 ```
 feat(registry): add Boot Chain domain — BOOT_CHAIN_ARCH.md v1.0
 
-Source: Qualcomm SoC BSP boot chain bring-up experience
+Source: Embedded SoC BSP boot chain bring-up experience
 patterns generalised from project experience.
 Registry bumped to v1.3.
 ```
@@ -447,7 +449,8 @@ Closes #issue (if applicable)
 
 **Scopes:** `registry`, `methodology`, `yocto-bsp-arch`,
 `boot-chain-arch`, `pcie-bsp-arch`, `ethernet-bsp-arch`,
-`usb-storage-arch`, `firmware-port-arch`, `uboot-arch`, `zephyr-arch`, `rtos-bench-arch`
+`usb-storage-arch`, `firmware-port-arch`, `uboot-arch`, `zephyr-arch`,
+`rtos-bench-arch`, `security-arch-knowledge`
 
 ---
 
@@ -477,6 +480,188 @@ project using the same technology?
 
 ---
 
+## Methodology Backlog
+
+This section captures project-agnostic pending actions — improvements to
+the methodology, domain documents, or knowledge base structure that have
+been identified but not yet written. It is reviewed at the start of any
+session that touches methodology, architecture, or knowledge base questions.
+
+**The discipline:** Every item here is either acted on (promoted to a
+document update) or explicitly deferred with a reason. Items do not
+accumulate indefinitely. When an item is completed, it is removed and
+a changelog entry is added to the relevant document.
+
+**The generalisation test still applies.** Items here must be
+project-agnostic — applicable across projects using this methodology.
+Project-specific pending items belong in `PROJECT_CONTEXT.md`, not here.
+
+---
+
+### Backlog Items
+
+---
+
+**MB-001 — Create `FIRMWARE_PORT_ARCH.md`**  ✅ COMPLETED May 2026
+
+See Completed Items table below.
+
+---
+
+**MB-002 — Add CRA/PSA boundary principle to `FIRMWARE_PORT_ARCH.md`**
+
+Status: READY — principle identified and justified
+Source: EN 304 623 + EN 304 626 joint analysis (May 2026)
+Principle: CRA compliance via EN 304 623 + EN 304 626 is necessary for
+CE marking but does not establish principled trust isolation architecture.
+The two standards leave the boot-to-OS handoff interface undefined — no
+joint requirement exists that the OS verifies it is running on a
+compliant boot manager before relying on properties the boot manager
+is supposed to have provided. PSA certification closes this gap at the
+RoT layer. Any TF-M port targeting EU market products needs this framing
+to avoid assuming CRA compliance implies correct trust architecture.
+Blocked on: nothing — MB-001 completed
+Target: `FIRMWARE_PORT_ARCH.md` Domain A
+
+---
+
+**MB-003 — Add TR-MISO trust model gap principle to `FIRMWARE_PORT_ARCH.md`**
+
+Status: READY — principle identified and justified
+Source: EN 304 626 analysis (May 2026)
+Principle: EN 304 626 TR-MISO is mechanism-first without a trust model.
+It specifies hardware-enforced memory access control without defining
+principals, trust levels, or the identity × resource → policy structure
+that makes isolation meaningful. A product can pass TR-MISO assessment
+while having an unprincipled NS-to-S boundary that leaks key material,
+if it has no user accounts (the applicability condition). Any security
+firmware architect evaluating CRA compliance must apply a trust-model
+lens that the standard itself does not provide.
+Blocked on: nothing — MB-001 completed
+Target: `FIRMWARE_PORT_ARCH.md` Domain A
+
+---
+
+**MB-004 — Create `SECURITY_ARCH_KNOWLEDGE.md`**
+
+Status: READY — three initial patterns identified, ready to write
+Source: TF-M PSA-L2 porting project + CRA analysis (May 2026)
+Scope: Reusable architectural patterns only. Not normative text (retrieve
+at query time via web search). Not design decisions (belong in PPS). Not
+AI failure modes (belong in FIRMWARE_PORT_ARCH Domain F or METHODOLOGY.md).
+Initial patterns:
+  Pattern 1 — Non-securable NVM storage security
+    Cryptographic enforcement substitutes for hardware write protection
+    when hardware protection is unavailable. AES-GCM-SIV (RFC 8452)
+    is necessary (not merely sufficient) for power-loss correctness due
+    to nonce-misuse resistance. Confidence: INFERRED — validated on a
+    Cortex-M33 adversarial PoC; Phase 4 hardware testing will promote
+    to VERIFIED.
+  Pattern 2 — Trust boundary definition precedes mechanism selection
+    Define principals and trust levels before selecting SAU/MPU/MPC/PPC
+    configuration. Isolation without a trust model produces mechanism
+    compliance without security property guarantees. Derived from
+    TR-MISO analysis — the structural gap the ETSI OS standard has and
+    PSA fills. Confidence: VERIFIED — normatively grounded in PSA
+    architecture.
+  Pattern 3 — CRA/PSA complementarity
+    CRA compliance establishes the regulatory floor (CE marking, essential
+    requirements). PSA certification establishes principled trust
+    architecture (verifiable RoT, defined isolation levels, normative
+    security claims). Neither substitutes for the other. Together they
+    address different evaluation audiences: market regulator vs security
+    architect. Confidence: VERIFIED — derived from joint EN 304 623/626
+    and PSA-L2 normative analysis.
+Blocked on: nothing — can be written independently of MB-001
+Target: `domains/SECURITY_ARCH_KNOWLEDGE.md` v0.1 (stub)
+Note: Load trigger keywords differ from FIRMWARE_PORT_ARCH. Activate on
+security architecture design questions, CRA compliance analysis, PSA
+certification scope, threat model, trust boundary definition, key
+derivation design — not on TF-M implementation sessions.
+
+---
+
+**MB-005 — Add knowledge layer boundary discipline to `METHODOLOGY.md`**
+
+Status: READY — principle identified
+Source: Knowledge base architecture discussion (May 2026)
+Principle: Three-layer knowledge boundary discipline.
+  Layer 0 — Retrieved at query time: normative standard text, SDK source
+    excerpts, datasheet sections, evaluation lab outputs. Do not migrate
+    into Layer 1 markdown files — retrieve via web search or grep at
+    session time.
+  Layer 1 — Loaded at session start: reusable patterns, process
+    constraints, project state. The markdown file structure in this
+    knowledge base. Appropriate for content that is stable, cross-project,
+    and not accurately covered by LLM training.
+  Layer 2 — LLM training weights: general embedded systems knowledge,
+    common design patterns, language and framework knowledge.
+Placement rule: if content can be retrieved accurately at query time,
+  do not put it in Layer 1. If it is already in LLM training with
+  sufficient accuracy, do not put it in Layer 1. Layer 1 is for the
+  narrow residual that is neither retrievable on demand nor reliably
+  trained.
+Target: `METHODOLOGY.md` — new subsection under "The Single Source of
+Truth" or as a standalone "Knowledge Layer Boundary" section.
+Blocked on: nothing
+Note: This principle also informs KNOWLEDGE_REGISTRY.md maintenance —
+reviewers should apply it when deciding whether a new finding belongs
+in a domain document or should be retrieved at session time.
+
+---
+
+**MB-006 — Add `BOOT_CHAIN_ARCH.md` seed**
+
+Status: PARTIALLY READY — source material from two project domains
+available
+Source: EN 304 623 analysis (May 2026) + embedded SoC BSP boot
+chain bring-up experience
+Available content: EN 304 623 four trust boundaries (hardware, storage,
+network, OS boundary), 9 requirement families, TOCTOU requirement
+(INT-010), MAS-001 resource cleanup before handoff, SBD-004 no-auto-
+fallback, CON-002 no global symmetric keys. Embedded Linux boot chain:
+first-stage and second-stage bootloaders, partition table, device
+provisioning protocols, version lock constraints.
+Blocked on: needs minimum 3 categorical domains and 2 principles per
+domain (Protocol 2). EN 304 623 material covers security firmware boot
+chain well; embedded Linux BSP material covers the application processor
+boot chain.
+Recommend: write v1.0 when a boot chain project is active — the project
+context will surface additional principles that justify the investment.
+Target: `domains/BOOT_CHAIN_ARCH.md` v1.0
+Registry update: Protocol 4 (graduate from Planned to Available)
+
+---
+
+### Completed Items
+
+| Item | Completed | Promoted to |
+|---|---|---|
+| MB-001 | May 2026 | FIRMWARE_PORT_ARCH.md v1.0 created |
+
+---
+
+### Backlog Maintenance Rules
+
+1. Items are added when a project-agnostic insight is identified but
+   cannot be acted on immediately. Add in the same session it is
+   identified — do not defer the capture.
+
+2. Items are removed when the corresponding document update is committed.
+   Add a completed row to the table above and a changelog entry to the
+   updated document.
+
+3. Items are not allowed to accumulate without review. Any session that
+   activates METHODOLOGY.md should scan this backlog for items that are
+   now unblocked.
+
+4. The generalisation test is the admission gate. Project-specific
+   pending items belong in `PROJECT_CONTEXT.md`. Domain-specific items
+   that are ready to write belong directly in the target document, not
+   in this backlog.
+
+---
+
 ## Registry Changelog
 
 | Version | Date | Change |
@@ -486,6 +671,8 @@ project using the same technology?
 | 1.2 | May 2026 | Added comprehensive Maintenance Protocol (Protocols 1–4). Version numbering policy. Commit message convention. Knowledge base vs project context boundary definition. Absorbed standalone "Adding a New Domain" section into Protocol 2. |
 | 1.3 | May 2026 | Added U-Boot and Zephyr RTOS as planned domains (registry table + status table). Fixed repository URL placeholder. Updated YOCTO_BSP_ARCH.md status to v1.2. Updated domain shift example to reflect D2 first-patch gate. |
 | 1.4 | May 2026 | Added RTOS Benchmark as formally registered available domain (RTOS_BENCH_ARCH.md v1.4). Covers WCET benchmarking, OS primitive metrics, PMU attribution, mixed-criticality safety, Layer 1–4 architecture (bare-metal through AMP/AI inference), VirtIO overhead measurement, SMMU IOTLB attribution. Added rtos-bench-arch commit scope. |
+| 1.5 | May 2026 | Added Methodology Backlog section. Six items registered: MB-001 (FIRMWARE_PORT_ARCH.md creation), MB-002 (CRA/PSA boundary principle), MB-003 (TR-MISO trust model gap principle), MB-004 (SECURITY_ARCH_KNOWLEDGE.md stub), MB-005 (knowledge layer boundary discipline for METHODOLOGY.md), MB-006 (BOOT_CHAIN_ARCH.md seed). Added security-arch-knowledge commit scope. |
+| 1.6 | May 2026 | Graduated FIRMWARE_PORT_ARCH.md from Planned to Available (v1.0). Added Embedded Security Architecture domain (SECURITY_ARCH_KNOWLEDGE.md, planned). Completed MB-001. |
 
 ---
 
