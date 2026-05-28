@@ -1,0 +1,14 @@
+# Project context files — session-scoped, not for public repo
+# Keep in contexts/ directory locally, never commit
+contexts/
+
+# Catch any context files placed at repo root accidentally
+*_context.md
+*_context_*.md
+
+# Editor and OS artifacts
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/

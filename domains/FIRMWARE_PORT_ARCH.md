@@ -6,7 +6,7 @@ https://creativecommons.org/licenses/by/4.0/
 
 # Security Firmware Porting Architecture Principles
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** May 2026
 **Author:** Lei Zhou + Claude (Anthropic)
 **Licence:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
@@ -682,7 +682,7 @@ reading the design document for that component.**
 ### F2 — Apply the pre-implementation checklist before generating any file
 
 Before generating any platform port file implementation, confirm all
-items in METHODOLOGY.md §Pre-implementation checklist are satisfied.
+items in METHODOLOGY_RULES.md §Pre-implementation checklist are satisfied.
 
 Hard stops — do not generate if any of these are unknown:
 - Exact function signature verified from actual header in version in use
@@ -729,3 +729,4 @@ port to a different Cortex-M platform?
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | May 2026 | Initial version. Derived from Cortex-M55 SoC TF-M PSA-L2 porting project. Domains A–F covering certification scope, interface contracts, platform architecture, security design correctness, phase-gated implementation, and AI generation constraints. Anti-patterns 1–12 from project experience. CRA/PSA boundary principles from EN 304 623/626 joint analysis. |
+| 1.1 | May 2026 | Updated F2 cross-reference from METHODOLOGY.md to METHODOLOGY_RULES.md following methodology file split. |
