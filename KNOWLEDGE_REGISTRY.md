@@ -6,7 +6,7 @@ https://creativecommons.org/licenses/by/4.0/
 
 # BSP Engineering Knowledge Registry
 
-**Version:** 1.10
+**Version:** 1.12
 **Date:** May 2026
 **Author:** Lei Zhou + Claude (Anthropic)
 **Licence:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
@@ -20,7 +20,7 @@ This file is the domain router and workspace operational reference.
 It is Tier 1 — loaded every session in every workspace.
 
 Maintenance protocols, backlog, changelogs, and domain activation
-examples are in METHODOLOGY_REF.md (Tier 4 — load when needed).
+examples are in METHODOLOGY_REF.md (Tier 3 — presented at session start when goal matches).
 
 **Filenames are version-free.** The version number lives inside the
 document header. When a document is updated, replace the file content.
@@ -48,24 +48,28 @@ Domain files whose trigger is always active in this workspace.
 ```
 This workspace:   FIRMWARE_PORT_ARCH.md, SECURITY_ARCH_KNOWLEDGE.md
 Yocto workspace:  YOCTO_BSP_ARCH.md
-RTOS workspace:   RTOS_BENCH_ARCH.md
+RTOS workspace:   (none — see Tier 3)
 ```
 
-**Tier 3 — Session-scoped (your decision, no protocol)**
+**Tier 3 — Session-scoped (Claude prompts, human selects)**
 
-Paste at session start when working on a specific implementation project.
-Skip for consultations, architecture discussions, or methodology work.
-Claude never asks for this — it is always your call.
+Never preloaded. At session start, Claude asks for the session goal,
+then presents relevant Tier 3 options. Human selects which to load.
+Human is never expected to recall which file to load from memory.
 ```
-[project_name]_context.md     one file per active implementation project
+[project_name]_context.md     project-specific state: results, OI register,
+                               hardware config, phase status
+RTOS_BENCH_ARCH.md            benchmark principles, timing methodology,
+                               PMU attribution, VirtIO eBPF design,
+                               pre-implementation checklists
 ```
 
-**Tier 4 — On-demand (Claude requests, you paste)**
+**Tier 3 also includes on-demand reference docs** presented by Claude
+when the session goal matches their scope:
 ```
-METHODOLOGY_REF.md     triggers: anti-pattern review, post-mortem,
-                       new domain doc creation, cold review of Category 1
-                       file, methodology questions, knowledge base maintenance,
-                       workflow or tooling optimization, process restructuring
+METHODOLOGY_REF.md     anti-pattern review, post-mortem, new domain doc
+                       creation, methodology questions, knowledge base
+                       maintenance, workflow or process optimization
 ```
 
 ---
@@ -76,10 +80,11 @@ METHODOLOGY_REF.md     triggers: anti-pattern review, post-mortem,
 
 ```
 Read METHODOLOGY_RULES.md and KNOWLEDGE_REGISTRY.md at session start.
-Apply constraints from any domain files already present in context.
-Identify if additional domain files are needed from the session goal.
-Request any needed conditional files before proceeding.
 Apply all standing rules from METHODOLOGY_RULES.md.
+At session start, ask the human what their goal is for this session.
+Based on the answer, present relevant Tier 3 files as options with
+one-line descriptions, ask the human to select which to load, then
+wait for the paste before proceeding with any work.
 ```
 
 ### Setup steps
@@ -89,7 +94,7 @@ Apply all standing rules from METHODOLOGY_RULES.md.
 2. Upload Tier 1: METHODOLOGY_RULES.md, KNOWLEDGE_REGISTRY.md
 3. Upload Tier 2: domain files always active in this workspace
 4. Set project instruction (copy exactly from above)
-5. Keep on local disk: METHODOLOGY_REF.md, [project]_context.md files
+5. Keep on local disk: METHODOLOGY_REF.md, [project]_context.md, domain arch docs not in Tier 2
 ```
 
 ### Workspace examples
@@ -98,24 +103,21 @@ Apply all standing rules from METHODOLOGY_RULES.md.
 ```
 Tier 1:  METHODOLOGY_RULES.md, KNOWLEDGE_REGISTRY.md
 Tier 2:  FIRMWARE_PORT_ARCH.md, SECURITY_ARCH_KNOWLEDGE.md
-Tier 3:  apollo510_context.md, stm32u585_context.md  (local disk)
-Tier 4:  METHODOLOGY_REF.md  (local disk)
+Tier 3:  apollo510_context.md, stm32u585_context.md, METHODOLOGY_REF.md  (local disk)
 ```
 
 **Yocto BSP workspace**
 ```
 Tier 1:  METHODOLOGY_RULES.md, KNOWLEDGE_REGISTRY.md
 Tier 2:  YOCTO_BSP_ARCH.md
-Tier 3:  [board]_context.md  (local disk)
-Tier 4:  METHODOLOGY_REF.md, FIRMWARE_PORT_ARCH.md  (local disk — paste if session touches secure boot)
+Tier 3:  [board]_context.md, FIRMWARE_PORT_ARCH.md, METHODOLOGY_REF.md  (local disk)
 ```
 
 **RTOS benchmarking workspace**
 ```
 Tier 1:  METHODOLOGY_RULES.md, KNOWLEDGE_REGISTRY.md
-Tier 2:  RTOS_BENCH_ARCH.md
-Tier 3:  [project]_context.md  (local disk)
-Tier 4:  METHODOLOGY_REF.md  (local disk)
+Tier 2:  (none)
+Tier 3:  RTOS_BENCH_ARCH.md, [project]_context.md, METHODOLOGY_REF.md  (local disk)
 ```
 
 ---
@@ -125,18 +127,10 @@ Tier 4:  METHODOLOGY_REF.md  (local disk)
 No ceremony. No session header.
 
 1. Open session — Tier 1 and Tier 2 files already loaded
-2. State session goal
-3. Paste project context if working on a specific implementation project
-4. Claude applies loaded domain constraints, requests Tier 4 if triggered, proceeds
-
-| Session type | Paste at start | Claude may request |
-|---|---|---|
-| Implementation (Project A) | `project_a_context.md` | `METHODOLOGY_REF.md` if trigger fires |
-| Implementation (Project B) | `project_b_context.md` | `METHODOLOGY_REF.md` if trigger fires |
-| Consultation / architecture | nothing | `METHODOLOGY_REF.md` if trigger fires |
-| Methodology / post-mortem | nothing | `METHODOLOGY_REF.md` — likely |
-| Workflow / process optimization | nothing | `METHODOLOGY_REF.md` — certain |
-| New domain document | nothing | `METHODOLOGY_REF.md` — certain |
+2. Claude asks: "What is your goal for this session?"
+3. Claude presents relevant Tier 3 options with one-line descriptions
+4. Human selects which to load; Claude waits for paste before proceeding
+5. Claude applies all loaded constraints and proceeds
 
 Mid-session domain shift: Claude states which file is needed and waits
 before responding to the new topic.
@@ -145,9 +139,10 @@ before responding to the new topic.
 
 ## Domain Registry
 
-Scan session goal for keywords in the "Active when" column.
-Request the corresponding file if not already in context.
-Domain activation is cumulative — once active, stays active for the session.
+At session start, Claude maps the stated goal to relevant Tier 3 files
+using the "Active when" column below. Claude presents matches as options
+and waits for human selection. Domain activation is cumulative — once
+loaded, stays active for the session.
 
 | Domain | Active when conversation involves | File |
 |---|---|---|
@@ -170,11 +165,11 @@ and apply METHODOLOGY_RULES.md pre-implementation checklist as fallback.
 | File | Status | Notes |
 |---|---|---|
 | `METHODOLOGY_RULES.md` | ✅ Tier 1 | Always active |
-| `METHODOLOGY_REF.md` | ✅ Tier 4 | Conditional — load on trigger |
+| `METHODOLOGY_REF.md` | ✅ Tier 3 | On-demand — presented at session start when goal matches |
 | `YOCTO_BSP_ARCH.md` | ✅ Available | v1.2 May 2026 |
 | `FIRMWARE_PORT_ARCH.md` | ✅ Available | v1.1 May 2026 — TF-M PSA-L2 porting, Domains A–F |
 | `SECURITY_ARCH_KNOWLEDGE.md` | ✅ Available | v0.1 May 2026 — non-securable NVM, trust boundary, CRA/PSA |
-| `RTOS_BENCH_ARCH.md` | ✅ Available | v1.4 May 2026 |
+| `RTOS_BENCH_ARCH.md` | ✅ Tier 3 | v1.4 May 2026 — presented as option at session start |
 | `BOOT_CHAIN_ARCH.md` | 🔲 Planned | — |
 | `PCIE_BSP_ARCH.md` | 🔲 Planned | — |
 | `ETHERNET_BSP_ARCH.md` | 🔲 Planned | — |
@@ -191,6 +186,8 @@ and apply METHODOLOGY_RULES.md pre-implementation checklist as fallback.
 | 1.0–1.8 | May 2026 | See METHODOLOGY_REF.md for full changelog history |
 | 1.9 | May 2026 | Trim pass. Removed: duplicated standing rules block, domain activation examples, maintenance protocols, methodology backlog, full changelog history — all moved to METHODOLOGY_REF.md. Registry now contains only operational content needed every session: tier model, workspace setup, session workflow, domain routing table, status table. |
 | 1.10 | May 2026 | Added "workflow or tooling optimization" and "process restructuring" as explicit METHODOLOGY_REF.md triggers. Added workflow/process optimization row to session workflow table. Source: session retrospect — undeclared mental model anti-pattern (MB-007). |
+| 1.11 | May 2026 | Workflow optimization pass. RTOS_BENCH_ARCH.md moved from Tier 2 to Tier 3 — 13K tokens removed from always-loaded set. Session workflow changed from human-recall to Claude-driven: Claude asks session goal, presents Tier 3 options, human selects. Project instruction updated accordingly. SSoT discipline moved to METHODOLOGY_RULES.md. |
+| 1.12 | May 2026 | Simplification pass. Tier 4 collapsed into Tier 3 — both are paste-on-demand, distinction was implementation detail without user value. Three tiers total. METHODOLOGY_REF.md is now a Tier 3 option presented at session start when goal matches. |
 
 ---
 

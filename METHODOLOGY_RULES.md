@@ -178,18 +178,27 @@ Phase discipline:
 
 ## SSoT Discipline
 
-- Update SSoT after every CLI session before starting the next
-- CLI agent reads SSoT at start of every session — enforce this
-- Never allow design decisions to exist only in chat history
-- SSoT wins over chat history if they conflict
+[project]_context.md is the SSoT. Memory is a read cache — not a primary record.
+Never allow a decision or result to exist only in chat history or memory.
+SSoT wins over chat history if they conflict.
+
+Session-close checklist (run when session produced implementation decisions,
+validated results, or architecture changes):
+```
+□ New validated results → added to [project]_context.md result tables
+□ Resolved open items → status updated in OI register with date
+□ New open items → added to OI register with phase and description
+□ New architecture decisions → captured in relevant section
+□ Memory reflects same state as [project]_context.md
+```
 
 ---
 
 ## Domain Files
 
-Domain constraints are in workspace Tier 2 files and on-demand Tier 4 files.
-See KNOWLEDGE_REGISTRY.md for the full domain routing table, trigger keywords,
-and file availability status.
+Domain constraints are in workspace Tier 2 files (always loaded) and
+session-scoped Tier 3 files (Claude presents at session start, human selects).
+See KNOWLEDGE_REGISTRY.md for the full domain routing table and file status.
 
 If a domain file is not available and the session requires it: state this
 explicitly and apply the pre-implementation checklist above as a fallback.
