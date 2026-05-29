@@ -8,14 +8,12 @@ project files change.
 ---
 
 ```
-At the start of every session:
-1. Read KNOWLEDGE_REGISTRY.md using the view tool
-2. Read PROJECT_CONTEXT.md using the view tool
-3. Read METHODOLOGY_RULES.md using the view tool
-4. Scan the session goal and conversation for active domains
-5. Read each active domain file listed in the registry using the view tool
-Apply all standing rules and domain constraints before responding to
-any technical question.
+Read METHODOLOGY_RULES.md and KNOWLEDGE_REGISTRY.md at session start.
+Apply all standing rules from METHODOLOGY_RULES.md.
+At session start, ask the human what their goal is for this session.
+Based on the answer, present relevant Tier 3 files as options with
+one-line descriptions, ask the human to select which to load, then
+wait for the paste before proceeding with any work.
 
 STANDING ENFORCEMENT — NON-NEGOTIABLE:
 After generating any analytical output — recommendation, gap finding,
@@ -36,18 +34,22 @@ proceeding.
 
 ## Why this instruction never changes
 
-The instruction loads the knowledge base in a fixed order:
-1. KNOWLEDGE_REGISTRY.md — tells Claude which domains are active
-2. PROJECT_CONTEXT.md — provides project-specific ground truth
-3. METHODOLOGY_RULES.md — applies universal process constraints
-4. Domain files — applies domain-specific structural constraints
+The instruction establishes two things at session start:
 
-This order is deliberate. The registry routes to the right domain files.
-The project context provides the facts. The methodology applies the process.
-The domain files apply the structural guardrails.
+1. METHODOLOGY_RULES.md and KNOWLEDGE_REGISTRY.md are always loaded —
+   universal process constraints and domain routing.
+2. Claude asks the session goal, then presents relevant Tier 3 files
+   (project context, domain files, METHODOLOGY_REF.md) as options.
+   Human selects which to load. Claude waits for the paste before
+   proceeding with any work.
 
-Changing the instruction breaks the load order. Paraphrasing it introduces
-ambiguity about which files to load and when. Copy it verbatim every time.
+This order is deliberate. Universal constraints load first. Project-specific
+and domain-specific files load on demand based on the session goal.
+Claude drives the selection — the human is never expected to recall
+which files to load from memory.
+
+Changing the instruction breaks the session workflow. Paraphrasing it
+introduces ambiguity. Copy it verbatim every time.
 
 ## Which files to upload to the Claude project
 
@@ -57,13 +59,14 @@ Upload these files — the same set for every project (domain files vary):
 |---|---|---|
 | `KNOWLEDGE_REGISTRY.md` | Always | Identical across all projects |
 | `METHODOLOGY_RULES.md` | Always | Identical across all projects |
-| `PROJECT_CONTEXT.md` | Always | Project-specific — one per project |
-| `YOCTO_BSP_ARCH.md` | If Yocto | Upload when project uses Yocto |
-| `PCIE_BSP_ARCH.md` | If PCIe | Upload when project has PCIe work |
-| `ETHERNET_BSP_ARCH.md` | If Ethernet | Upload when project has Ethernet work |
-| `USB_STORAGE_ARCH.md` | If USB/Storage | Upload when project has storage work |
-| `BOOT_CHAIN_ARCH.md` | If boot chain | Upload when project has boot chain work |
-| `FIRMWARE_PORT_ARCH.md` | If firmware port | Upload when porting TF-M or similar |
+| `PROJECT_CONTEXT.md` | Tier 3 — paste at session start | Project-specific — one per project |
+| `YOCTO_BSP_ARCH.md` | Tier 3 — if Yocto | Present as option when session goal matches |
+| `PCIE_BSP_ARCH.md` | Tier 3 — if PCIe | Present as option when session goal matches |
+| `ETHERNET_BSP_ARCH.md` | Tier 3 — if Ethernet | Present as option when session goal matches |
+| `USB_STORAGE_ARCH.md` | Tier 3 — if USB/Storage | Present as option when session goal matches |
+| `BOOT_CHAIN_ARCH.md` | Tier 3 — if boot chain | Present as option when session goal matches |
+| `FIRMWARE_PORT_ARCH.md` | Tier 3 — if firmware port | Present as option when session goal matches |
+| `METHODOLOGY_REF.md` | Tier 3 — on demand | Present when goal involves methodology, anti-patterns, post-mortem |
 
 ## Updating the Claude project
 
@@ -74,5 +77,5 @@ When a domain file is updated (new principle added):
 → Replace the domain file with the new version.
 
 The project instruction and `KNOWLEDGE_REGISTRY.md` only need updating
-when a new domain is added to the registry. For routine updates, only
-the changed document needs replacing.
+when a new domain is added to the registry or the session workflow changes.
+For routine updates, only the changed document needs replacing.
