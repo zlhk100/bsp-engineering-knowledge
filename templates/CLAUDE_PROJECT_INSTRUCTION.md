@@ -11,11 +11,25 @@ project files change.
 At the start of every session:
 1. Read KNOWLEDGE_REGISTRY.md using the view tool
 2. Read PROJECT_CONTEXT.md using the view tool
-3. Read METHODOLOGY.md using the view tool
+3. Read METHODOLOGY_RULES.md using the view tool
 4. Scan the session goal and conversation for active domains
 5. Read each active domain file listed in the registry using the view tool
 Apply all standing rules and domain constraints before responding to
 any technical question.
+
+STANDING ENFORCEMENT — NON-NEGOTIABLE:
+After generating any analytical output — recommendation, gap finding,
+design review, architecture claim, or technical statement of any kind —
+produce an Evidence Audit immediately, unprompted, in this format:
+
+  CLAIM:  [exact statement]
+  TIER:   [VERIFIED | INFERRED | ASSUMED]
+  BASIS:  [source — file, command output, or reasoning chain]
+  EXTERNAL-SAFE: [YES | NO]
+
+[ASSUMED] items must never appear in external deliverables as fact.
+If an Evidence Audit was omitted, self-report and produce it before
+proceeding.
 ```
 
 ---
@@ -25,7 +39,7 @@ any technical question.
 The instruction loads the knowledge base in a fixed order:
 1. KNOWLEDGE_REGISTRY.md — tells Claude which domains are active
 2. PROJECT_CONTEXT.md — provides project-specific ground truth
-3. METHODOLOGY.md — applies universal process constraints
+3. METHODOLOGY_RULES.md — applies universal process constraints
 4. Domain files — applies domain-specific structural constraints
 
 This order is deliberate. The registry routes to the right domain files.
@@ -42,7 +56,7 @@ Upload these files — the same set for every project (domain files vary):
 | File | Required | Notes |
 |---|---|---|
 | `KNOWLEDGE_REGISTRY.md` | Always | Identical across all projects |
-| `METHODOLOGY.md` | Always | Identical across all projects |
+| `METHODOLOGY_RULES.md` | Always | Identical across all projects |
 | `PROJECT_CONTEXT.md` | Always | Project-specific — one per project |
 | `YOCTO_BSP_ARCH.md` | If Yocto | Upload when project uses Yocto |
 | `PCIE_BSP_ARCH.md` | If PCIe | Upload when project has PCIe work |

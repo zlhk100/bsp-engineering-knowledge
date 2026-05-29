@@ -6,7 +6,7 @@ https://creativecommons.org/licenses/by/4.0/
 
 # AI-Assisted Embedded Systems Engineering Methodology — Reference
 
-**Version:** 1.10-ref
+**Version:** 1.11-ref
 **Split from:** METHODOLOGY.md v1.8 (2026-05-27)
 **Authors:** Lei Zhou + Claude (Anthropic)
 **Active rules companion:** METHODOLOGY_RULES.md — load every session.
@@ -838,6 +838,7 @@ See Completed Items table below.
 | 1.8-ref | 2026-05-27 | Initial split from METHODOLOGY.md v1.8 |
 | 1.9-ref | 2026-05-27 | Added: Known AI Failure Modes summary, Session Prompt Template, Domain Activation Examples, Maintenance Protocols 1–4, Methodology Backlog, Registry Changelog history. Absorbs all content removed from METHODOLOGY_RULES.md v1.9 and KNOWLEDGE_REGISTRY.md v1.9 trim pass. |
 | 1.10-ref | 2026-05-27 | Added Anti-pattern 12 — undeclared mental model. Added MB-007 to backlog (completed). Source: session retrospect on workflow optimization session. |
+| 1.11-ref | 2026-05-28 | Changelog entry for METHODOLOGY_RULES.md v2.0-rules: Rule 2 activation broadened from content-type whitelist to principle-based trigger covering all analytical output; self-report obligation added for omissions; external deliverable gate made explicit with human sign-off; Rule 1 and Rule 2 explicitly linked. Phase Structure trimmed to generic discipline — TF-M phase content already in FIRMWARE_PORT_ARCH.md Domain E. CLAUDE_PROJECT_INSTRUCTION.md updated: stale METHODOLOGY.md reference corrected to METHODOLOGY_RULES.md; Rule 2 enforcement trigger added to project instruction. |
 
 ---
 

@@ -6,7 +6,7 @@ https://creativecommons.org/licenses/by/4.0/
 
 # BSP Engineering Knowledge Registry
 
-**Version:** 1.12
+**Version:** 1.13
 **Date:** May 2026
 **Author:** Lei Zhou + Claude (Anthropic)
 **Licence:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
@@ -188,6 +188,7 @@ and apply METHODOLOGY_RULES.md pre-implementation checklist as fallback.
 | 1.10 | May 2026 | Added "workflow or tooling optimization" and "process restructuring" as explicit METHODOLOGY_REF.md triggers. Added workflow/process optimization row to session workflow table. Source: session retrospect — undeclared mental model anti-pattern (MB-007). |
 | 1.11 | May 2026 | Workflow optimization pass. RTOS_BENCH_ARCH.md moved from Tier 2 to Tier 3 — 13K tokens removed from always-loaded set. Session workflow changed from human-recall to Claude-driven: Claude asks session goal, presents Tier 3 options, human selects. Project instruction updated accordingly. SSoT discipline moved to METHODOLOGY_RULES.md. |
 | 1.12 | May 2026 | Simplification pass. Tier 4 collapsed into Tier 3 — both are paste-on-demand, distinction was implementation detail without user value. Three tiers total. METHODOLOGY_REF.md is now a Tier 3 option presented at session start when goal matches. |
+| 1.13 | May 2026 | METHODOLOGY_RULES.md bumped to v2.0-rules: Rule 2 enforcement strengthened (principle-based trigger, self-report obligation, explicit human sign-off gate for external deliverables, Rule 1+2 linked). Phase Structure trimmed to generic discipline. CLAUDE_PROJECT_INSTRUCTION.md corrected: METHODOLOGY.md → METHODOLOGY_RULES.md; Rule 2 trigger added. |
 
 ---
 
